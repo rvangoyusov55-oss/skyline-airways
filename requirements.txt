@@ -1,7 +1,4 @@
 Flask
 Flask-SQLAlchemy
-Flask-HttpAuth
-cryptography
-psycopg2-binary
 gunicorn
-psycopg2-binary
+psycopg[binary]
