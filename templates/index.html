@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SkyLine Airways - Avia-bilet Bron Sistemi</title>
+    <style>
+        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        
+        body { 
+            background: linear-gradient(rgba(0, 15, 35, 0.75), rgba(0, 15, 35, 0.85)), url('{{ url_for("static", filename="bg.jpg") }}') no-repeat center center fixed; 
+            background-size: cover;
+            margin: 0; 
+            padding: 20px; 
+            min-height: 100vh;
+            display: flex; 
+            flex-direction: column;
+            justify-content: center; 
+            align-items: center; 
+        }
+
+        .header-bar {
+            width: 100%;
+            max-width: 480px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #ffffff;
+            margin-bottom: 15px;
+            padding: 10px 15px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(8px);
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .card { 
+            background: rgba(255, 255, 255, 0.95); 
+            padding: 35px; 
+            border-radius: 16px; 
+            box-shadow: 0 15px 35px rgba(0,0,0,0.5); 
+            width: 100%;
+            max-width: 480px; 
+            backdrop-filter: blur(10px);
+        }
+
+        h2 { color: #002b49; text-align: center; margin-top: 0; margin-bottom: 5px; font-size: 24px; }
+        p.subtitle { text-align: center; color: #666; font-size: 13px; margin-bottom: 20px; }
+
+        .currency-switch {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .btn-currency {
+            background: #e9ecef;
+            border: 1px solid #ced4da;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 12px;
+            transition: 0.2s;
+        }
+
+        .btn-currency.active {
+            background: #005c8a;
+            color: white;
+            border-color: #005c8a;
+        }
+
+        label { display: block; margin-top: 12px; font-weight: 600; color: #333; font-size: 13px; }
+        
+        input, select { 
+            width: 100%; 
+            padding: 11px; 
+            margin-top: 5px; 
+            border: 1px solid #ccc; 
+            border-radius: 8px; 
+            font-size: 14px; 
+            transition: 0.3s;
+        }
+
+        input:focus, select:focus { border-color: #005c8a; outline: none; box-shadow: 0 0 8px rgba(0,92,138,0.3); }
+
+        .price-badge {
+            margin-top: 15px;
+            background: #eef7ff;
+            border: 1px dashed #007bff;
+            padding: 10px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+            font-weight: bold;
+            color: #003366;
+        }
+
+        .promo-box {
+            display: flex;
+            gap: 8px;
+            margin-top: 15px;
+        }
+
+        .btn-promo {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 13px;
+            white-space: nowrap;
+        }
+
+        .btn-promo:hover { background: #218838; }
+
+        button.btn-submit { 
+            width: 100%; 
+            background: linear-gradient(135deg, #005c8a, #003366); 
+            color: white; 
+            padding: 13px; 
+            border: none; 
+            border-radius: 8px; 
+            margin-top: 20px; 
+            font-size: 16px; 
+            font-weight: bold; 
+            cursor: pointer; 
+            transition: 0.3s; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        button.btn-submit:hover { opacity: 0.95; transform: translateY(-1px); }
+
+        .alert { background-color: #d4edda; color: #155724; padding: 12px; border-radius: 8px; margin-bottom: 15px; text-align: center; font-size: 13px; border: 1px solid #c3e6cb; }
+
+        .admin-link { display: block; text-align: center; margin-top: 18px; color: #005c8a; text-decoration: none; font-size: 13px; font-weight: 600; }
+        .admin-link:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+
+    <div class="header-bar">
+        <span>🌐 <b>SkyLine</b> Global Flights</span>
+        <span id="liveClock">00:00:00</span>
+    </div>
+
+    <div class="card">
+        <h2>✈️ Avia-Bilet Bron Et</h2>
+        <p class="subtitle">Kriptoqrafik mühafizə olunan bulud bron sistemi</p>
+        
+        <!-- Valyuta Seçimi JS -->
+        <div class="currency-switch">
+            <button class="btn-currency active" onclick="setCurrency('AZN')">AZN (₼)</button>
+            <button class="btn-currency" onclick="setCurrency('USD')">USD ($)</button>
+            <button class="btn-currency" onclick="setCurrency('EUR')">EUR (€)</button>
+        </div>
+
+        {% with messages = get_flashed_messages() %}
+          {% if messages %}
+            <div class="alert">{{ messages[0] }}</div>
+          {% endif %}
+        {% endwith %}
+
+        <form action="/book" method="POST" id="bookingForm">
+            <label>Sərnişinin Adı və Soyadı:</label>
+            <input type="text" name="passenger_name" placeholder="Məs: Elvin Məmmədov" required>
+
+            <label>Elektron Poçt (Email):</label>
+            <input type="email" name="email" placeholder="ornek@mail.com" required>
+
+            <label>Uçuş İstiqaməti:</label>
+            <select name="destination" id="destinationSelect" onchange="updatePrice()" required>
+                <option value="">İstiqamət seçin</option>
+                <option value="Bakı (GYD) ➔ İstanbul (IST)" data-baseprice="250">Bakı ➔ İstanbul</option>
+                <option value="Bakı (GYD) ➔ London (LHR)" data-baseprice="650">Bakı ➔ London</option>
+                <option value="Bakı (GYD) ➔ Dubay (DXB)" data-baseprice="380">Bakı ➔ Dubay</option>
+                <option value="Bakı (GYD) ➔ Paris (CDG)" data-baseprice="580">Bakı ➔ Paris</option>
+            </select>
+
+            <!-- Dinamik Qiymət JS -->
+            <div class="price-badge">
+                <span>Yekun Qiymət:</span>
+                <span id="displayPrice">0 ₼</span>
+            </div>
+
+            <!-- Promokod Bölməsi JS -->
+            <div class="promo-box">
+                <input type="text" id="promoCode" placeholder="Promokod (Məs: SKY10)">
+                <button type="button" class="btn-promo" onclick="applyPromo()">Tətbiq Et</button>
+            </div>
+
+            <label>Pasport Nömrəsi / Məxfi Kod (AES-Fernet Şifrələnəcək):</label>
+            <input type="password" name="passport" placeholder="Məxfi pasport verisi" required>
+
+            <button type="submit" class="btn-submit">🔒 Biletinizi Şifrələyərək Bron Edin</button>
+        </form>
+
+        <a href="/admin" class="admin-link">🔑 İnzibatçı Paneli (Kripto İdarəetmə)</a>
+    </div>
+
+    <!-- JavaScript İnteraktivlik Hissəsi -->
+    <script>
+        let currentCurrency = 'AZN';
+        let currencyRates = { 'AZN': 1, 'USD': 0.59, 'EUR': 0.54 };
+        let currencySymbols = { 'AZN': '₼', 'USD': '$', 'EUR': '€' };
+        let discount = 1.0;
+
+        // Canlı Saat
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('liveClock').innerText = now.toLocaleTimeString();
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // Valyuta Dəyişdirmə
+        function setCurrency(curr) {
+            currentCurrency = curr;
+            document.querySelectorAll('.btn-currency').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            updatePrice();
+        }
+
+        // Qiyməti Yeniləmə
+        function updatePrice() {
+            const select = document.getElementById('destinationSelect');
+            const selectedOption = select.options[select.selectedIndex];
+            const basePrice = parseFloat(selectedOption.getAttribute('data-baseprice') || 0);
+
+            if (basePrice > 0) {
+                let converted = (basePrice * currencyRates[currentCurrency] * discount).toFixed(2);
+                document.getElementById('displayPrice').innerText = converted + " " + currencySymbols[currentCurrency];
+            } else {
+                document.getElementById('displayPrice').innerText = "0 " + currencySymbols[currentCurrency];
+            }
+        }
+
+        // Promokod Tətbiqi
+        function applyPromo() {
+            const code = document.getElementById('promoCode').value.trim().toUpperCase();
+            if (code === 'SKY10') {
+                discount = 0.90; // 10% Endirim
+                alert("🎉 Təbriklər! 10% endirim tətbiq edildi.");
+            } else {
+                alert("❌ Keçərsiz promokod. Doğru kod: SKY10");
+                discount = 1.0;
+            }
+            updatePrice();
+        }
+
+        // Form Göndərilmə Xəbərdarlığı
+        document.getElementById('bookingForm').addEventListener('submit', function() {
+            console.log("Məlumatlar kriptoqrafik şifrələnmə üçün Flask backend-ə göndərilir...");
+        });
+    </script>
+
+</body>
+</html>
